@@ -1,0 +1,5 @@
+{
+  "name": "ProScout AI - FC Position Calculator Beta 1.14.1",
+  "description": "Analise capturas de tela de jogadores do EA Sports FC 26 usando IA para calcular sua melhor posição e classificação geral real com base na ponderação de seus atributos.",
+  "requestFramePermissions": []
+}
