@@ -12,10 +12,10 @@ export interface AnalysisResult {
 export const analyzePlayerImages = async (base64Images: string[]): Promise<AnalysisResult> => {
   /**
    * 2. MODELO GEMINI 3 FLASH
-   * Usando a versão Preview que aparece no seu seletor.
-   * Este modelo é otimizado para velocidade e análise multimodal (imagens).
+   * Para a API, usamos o nome técnico simplificado: "gemini-3-flash".
+   * Este é o modelo 'Default' que você viu na sua lista.
    */
-  const model = genAI.getGenerativeModel({ model: "gemini-3.0-flash-preview" });
+  const model = genAI.getGenerativeModel({ model: "gemini-3-flash" });
 
   const imageParts = base64Images.map((img) => ({
     inlineData: {
@@ -90,7 +90,6 @@ export const analyzePlayerImages = async (base64Images: string[]): Promise<Analy
 
   } catch (error: any) {
     console.error("Erro Gemini:", error);
-    // Se der erro de quota novamente, sugere esperar um pouco
     if (error.message?.includes('429')) {
       throw new Error("Limite de requisições atingido. Aguarde 60 segundos.");
     }
