@@ -1,18 +1,18 @@
 
-import { GoogleGenerativeAI, Type } from "@google/generative-ai"; // Ajustei o import para a versão mais recente
+import { GoogleGenerativeAI, Type } from "@google/generative-ai";
 import { PlayerAttributes, PlayerInfo } from "../types";
 
-// 1. Aqui você define o genAI usando a chave do Netlify
 const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
 
-interface AnalysisResult {
+// Essa é a parte que faltava para o TypeScript não dar erro!
+export interface AnalysisResult {
   attributes: Partial<PlayerAttributes>;
   info: Partial<PlayerInfo>;
 }
 
 export const analyzePlayerImages = async (base64Images: string[]): Promise<AnalysisResult> => {
-  // 2. Usamos o modelo 'gemini-1.5-flash' que é o mais estável para imagens
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }, { apiVersion: "v1" });
+  // Chamada limpa e oficial
+  const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
 
   const imageParts = base64Images.map((img) => ({
     inlineData: {
@@ -20,7 +20,6 @@ export const analyzePlayerImages = async (base64Images: string[]): Promise<Analy
       data: img.split(",")[1], 
     },
   }));
-
   const prompt = `
     Aja como um especialista em scouting do EA Sports FC 26. Analise as imagens do cartão do jogador com precisão cirúrgica.
     Retorne apenas o JSON puro, conforme o schema solicitado.
