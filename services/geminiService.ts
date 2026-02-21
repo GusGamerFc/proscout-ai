@@ -12,8 +12,7 @@ export interface AnalysisResult {
 
 export const analyzePlayerImages = async (base64Images: string[]): Promise<AnalysisResult> => {
   // Chamada limpa e oficial
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
-
+  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
   const imageParts = base64Images.map((img) => ({
     inlineData: {
       mimeType: "image/png", 
