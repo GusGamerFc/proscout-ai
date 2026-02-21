@@ -1,31 +1,35 @@
-
-import { GoogleGenerativeAI, Type } from "@google/generative-ai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { PlayerAttributes, PlayerInfo } from "../types";
 
+// 1. Configuração da API com a chave do ambiente (Netlify/Vite)
 const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
 
-// Essa é a parte que faltava para o TypeScript não dar erro!
+// 2. Interface que define o que a função retorna
 export interface AnalysisResult {
   attributes: Partial<PlayerAttributes>;
   info: Partial<PlayerInfo>;
 }
 
 export const analyzePlayerImages = async (base64Images: string[]): Promise<AnalysisResult> => {
-  // Chamada limpa e oficial
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
+  // 3. Modelo 'gemini-1.5-flash' é o mais estável para evitar o erro 404
+  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+  // 4. Preparação das imagens para a IA
   const imageParts = base64Images.map((img) => ({
     inlineData: {
       mimeType: "image/png", 
       data: img.split(",")[1], 
     },
   }));
+
   const prompt = `
     Aja como um especialista em scouting do EA Sports FC 26. Analise as imagens do cartão do jogador com precisão cirúrgica.
-    Retorne apenas o JSON puro, conforme o schema solicitado.
+    Extraia todos os atributos (ritmo, finalização, passe, drible, defesa, físico) e informações biográficas.
+    Retorne apenas o JSON puro, conforme o schema solicitado, sem comentários ou explicações.
   `;
 
   try {
-    // 3. CORREÇÃO AQUI: Mudamos 'ai.models' para 'model.generateContent'
+    // 5. Chamada oficial para geração de conteúdo
     const result = await model.generateContent([
       ...imageParts,
       { text: prompt },
@@ -36,12 +40,13 @@ export const analyzePlayerImages = async (base64Images: string[]): Promise<Analy
     
     if (!text) throw new Error("Sem resposta da IA");
     
-    // O restante do seu código de processamento de dados (JSON.parse, etc) continua igual abaixo...
-    const data = JSON.parse(text.replace(/```json|```/g, "")); // Remove possíveis blocos de código
+    // 6. Limpeza de Markdown para garantir que o JSON.parse não falhe
+    const data = JSON.parse(text.replace(/```json|```/g, "")); 
     
     const isGK = data.info?.positions?.includes('GK') || data.info?.positions?.includes('GR');
     const cleanAttributes: Partial<PlayerAttributes> = {};
     
+    // 7. Lógica de filtragem de atributos (Goleiro vs Linha)
     if (data.attributes) {
       for (const key in data.attributes) {
         const val = data.attributes[key];
@@ -64,6 +69,7 @@ export const analyzePlayerImages = async (base64Images: string[]): Promise<Analy
       }
     }
 
+    // 8. Limpeza e padronização das informações do jogador
     const cleanInfo: Partial<PlayerInfo> = {};
     if (data.info) {
       cleanInfo.name = data.info.name || '';
@@ -83,6 +89,7 @@ export const analyzePlayerImages = async (base64Images: string[]): Promise<Analy
     }
 
     return { attributes: cleanAttributes, info: cleanInfo };
+
   } catch (error: any) {
     console.error("Erro Gemini:", error);
     throw new Error(error.message || "Falha na análise da imagem.");
