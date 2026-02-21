@@ -12,7 +12,7 @@ export interface AnalysisResult {
 export const analyzePlayerImages = async (base64Images: string[]): Promise<AnalysisResult> => {
   // 2. FORÇANDO A VERSÃO ESTÁVEL V1 (Isso resolve o erro 404)
   const model = genAI.getGenerativeModel(
-    { model: "gemini-1.5-flash" },
+    { model: "gemini-1.5-flash-001" },
     { apiVersion: "v1" }
   );
 
@@ -92,4 +92,3 @@ export const analyzePlayerImages = async (base64Images: string[]): Promise<Analy
     console.error("Erro Gemini:", error);
     throw new Error(error.message || "Falha na análise da imagem.");
   }
-};
