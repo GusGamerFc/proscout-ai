@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { PlayerAttributes, PlayerInfo } from "../types";
 
-// 1. Inicialização
+// 1. Inicialização com sua chave nova
 const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
 
 export interface AnalysisResult {
@@ -11,13 +11,12 @@ export interface AnalysisResult {
 
 export const analyzePlayerImages = async (base64Images: string[]): Promise<AnalysisResult> => {
   /**
-   * 2. MODELO GEMINI 2.0 FLASH
-   * Esta é a versão mais recente e estável para visão computacional.
-   * Removendo o parâmetro apiVersion para evitar conflitos de rota.
+   * 2. MODELO GEMINI 3 FLASH
+   * Usando a versão Preview que aparece no seu seletor.
+   * Este modelo é otimizado para velocidade e análise multimodal (imagens).
    */
-  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+  const model = genAI.getGenerativeModel({ model: "gemini-3.0-flash-preview" });
 
-  // 3. Preparação das imagens
   const imageParts = base64Images.map((img) => ({
     inlineData: {
       mimeType: "image/png", 
@@ -28,7 +27,7 @@ export const analyzePlayerImages = async (base64Images: string[]): Promise<Analy
   const prompt = `
     Aja como um especialista em scouting do EA Sports FC 26. Analise as imagens do cartão do jogador com precisão cirúrgica.
     Extraia todos os atributos e informações biográficas.
-    Retorne apenas o JSON puro, conforme o schema solicitado.
+    Retorne apenas o JSON puro, conforme o schema solicitado, sem comentários.
   `;
 
   try {
@@ -42,7 +41,6 @@ export const analyzePlayerImages = async (base64Images: string[]): Promise<Analy
     
     if (!text) throw new Error("Sem resposta da IA");
     
-    // Limpeza de blocos de código markdown
     const data = JSON.parse(text.replace(/```json|```/g, "")); 
     
     const isGK = data.info?.positions?.includes('GK') || data.info?.positions?.includes('GR');
@@ -92,6 +90,10 @@ export const analyzePlayerImages = async (base64Images: string[]): Promise<Analy
 
   } catch (error: any) {
     console.error("Erro Gemini:", error);
+    // Se der erro de quota novamente, sugere esperar um pouco
+    if (error.message?.includes('429')) {
+      throw new Error("Limite de requisições atingido. Aguarde 60 segundos.");
+    }
     throw new Error(error.message || "Falha na análise da imagem.");
   }
 };
