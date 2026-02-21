@@ -1,9 +1,7 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
 import { PlayerAttributes, PlayerInfo } from "../types";
-
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
+const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
 interface AnalysisResult {
   attributes: Partial<PlayerAttributes>;
   info: Partial<PlayerInfo>;
