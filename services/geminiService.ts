@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { PlayerAttributes, PlayerInfo } from "../types";
 
-// 1. Inicialização com a sua chave de API (vinda do Netlify)
+// 1. Inicialização
 const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
 
 export interface AnalysisResult {
@@ -11,16 +11,13 @@ export interface AnalysisResult {
 
 export const analyzePlayerImages = async (base64Images: string[]): Promise<AnalysisResult> => {
   /**
-   * 2. CONFIGURAÇÃO DO MODELO
-   * Usamos 'gemini-1.5-flash-latest' na 'v1beta' para garantir compatibilidade
-   * com o método de análise de imagem (generateContent).
+   * 2. MODELO GEMINI 2.0 FLASH
+   * Esta é a versão mais recente e estável para visão computacional.
+   * Removendo o parâmetro apiVersion para evitar conflitos de rota.
    */
-  const model = genAI.getGenerativeModel(
-    { model: "gemini-1.5-flash-latest" },
-    { apiVersion: "v1beta" }
-  );
+  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
-  // 3. Preparação dos dados da imagem
+  // 3. Preparação das imagens
   const imageParts = base64Images.map((img) => ({
     inlineData: {
       mimeType: "image/png", 
@@ -31,11 +28,10 @@ export const analyzePlayerImages = async (base64Images: string[]): Promise<Analy
   const prompt = `
     Aja como um especialista em scouting do EA Sports FC 26. Analise as imagens do cartão do jogador com precisão cirúrgica.
     Extraia todos os atributos e informações biográficas.
-    Retorne apenas o JSON puro, conforme o schema solicitado, sem textos adicionais.
+    Retorne apenas o JSON puro, conforme o schema solicitado.
   `;
 
   try {
-    // 4. Chamada para a API
     const result = await model.generateContent([
       ...imageParts,
       { text: prompt },
@@ -46,13 +42,12 @@ export const analyzePlayerImages = async (base64Images: string[]): Promise<Analy
     
     if (!text) throw new Error("Sem resposta da IA");
     
-    // 5. Tratamento do JSON retornado
+    // Limpeza de blocos de código markdown
     const data = JSON.parse(text.replace(/```json|```/g, "")); 
     
     const isGK = data.info?.positions?.includes('GK') || data.info?.positions?.includes('GR');
     const cleanAttributes: Partial<PlayerAttributes> = {};
     
-    // 6. Lógica de filtragem de atributos (Goleiro vs Linha)
     if (data.attributes) {
       for (const key in data.attributes) {
         const val = data.attributes[key];
@@ -75,7 +70,6 @@ export const analyzePlayerImages = async (base64Images: string[]): Promise<Analy
       }
     }
 
-    // 7. Padronização dos dados biográficos
     const cleanInfo: Partial<PlayerInfo> = {};
     if (data.info) {
       cleanInfo.name = data.info.name || '';
@@ -97,7 +91,7 @@ export const analyzePlayerImages = async (base64Images: string[]): Promise<Analy
     return { attributes: cleanAttributes, info: cleanInfo };
 
   } catch (error: any) {
-    console.error("Erro detalhado do Gemini:", error);
+    console.error("Erro Gemini:", error);
     throw new Error(error.message || "Falha na análise da imagem.");
   }
 };
