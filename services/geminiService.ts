@@ -12,7 +12,7 @@ interface AnalysisResult {
 
 export const analyzePlayerImages = async (base64Images: string[]): Promise<AnalysisResult> => {
   // 2. Usamos o modelo 'gemini-1.5-flash' que é o mais estável para imagens
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }, { apiVersion: "v1" });
 
   const imageParts = base64Images.map((img) => ({
     inlineData: {
