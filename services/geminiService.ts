@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { PlayerAttributes, PlayerInfo } from "../types";
 
-// 1. Inicialização com sua chave nova
+// 1. Inicialização
 const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
 
 export interface AnalysisResult {
@@ -11,11 +11,11 @@ export interface AnalysisResult {
 
 export const analyzePlayerImages = async (base64Images: string[]): Promise<AnalysisResult> => {
   /**
-   * 2. MODELO GEMINI 3 FLASH
-   * Para a API, usamos o nome técnico simplificado: "gemini-3-flash".
-   * Este é o modelo 'Default' que você viu na sua lista.
+   * 2. MODELO ESTÁVEL DE PRODUÇÃO
+   * Embora a interface mostre Gemini 3, no código usamos o ID de produção estável.
+   * gemini-2.0-flash-001 é o modelo mais resiliente para evitar o erro 404.
    */
-  const model = genAI.getGenerativeModel({ model: "gemini-3-flash" });
+  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-001" });
 
   const imageParts = base64Images.map((img) => ({
     inlineData: {
@@ -27,7 +27,7 @@ export const analyzePlayerImages = async (base64Images: string[]): Promise<Analy
   const prompt = `
     Aja como um especialista em scouting do EA Sports FC 26. Analise as imagens do cartão do jogador com precisão cirúrgica.
     Extraia todos os atributos e informações biográficas.
-    Retorne apenas o JSON puro, conforme o schema solicitado, sem comentários.
+    Retorne apenas o JSON puro, conforme o schema solicitado.
   `;
 
   try {
@@ -41,6 +41,7 @@ export const analyzePlayerImages = async (base64Images: string[]): Promise<Analy
     
     if (!text) throw new Error("Sem resposta da IA");
     
+    // Remove possíveis formatações de markdown do JSON
     const data = JSON.parse(text.replace(/```json|```/g, "")); 
     
     const isGK = data.info?.positions?.includes('GK') || data.info?.positions?.includes('GR');
@@ -90,8 +91,9 @@ export const analyzePlayerImages = async (base64Images: string[]): Promise<Analy
 
   } catch (error: any) {
     console.error("Erro Gemini:", error);
+    // Tratamento amigável para o limite de cota (Erro 429)
     if (error.message?.includes('429')) {
-      throw new Error("Limite de requisições atingido. Aguarde 60 segundos.");
+      throw new Error("O Google limitou o uso gratuito por agora. Tente novamente em 1 minuto.");
     }
     throw new Error(error.message || "Falha na análise da imagem.");
   }
